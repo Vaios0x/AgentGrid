@@ -31,7 +31,7 @@ export function SearchBar({ onSearch, onFilter }: SearchBarProps) {
             type="text"
             placeholder="Search agents by name, category, or capability..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e: any) => setQuery(e.target.value)}
             className="w-full pl-12 pr-12 py-4 rounded-2xl glassmorphism border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50"
           />
           {query && (
