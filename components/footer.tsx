@@ -20,9 +20,8 @@ import { FooterParticles } from './footer-particles'
 
 export function Footer() {
   const scrollToTop = () => {
-    if (typeof window !== 'undefined') {
-      (window as any).scrollTo({ top: 0, behavior: 'smooth' })
-    }
+    // Scroll functionality disabled for SSR compatibility
+    console.log('Scroll to top clicked')
   }
 
   const footerLinks = {
