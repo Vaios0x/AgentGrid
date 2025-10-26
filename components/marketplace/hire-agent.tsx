@@ -179,7 +179,7 @@ export function HireAgent({ agentId }: HireAgentProps) {
                       step="0.01"
                       min="0.01"
                       value={formData.budget}
-                      onChange={(e) => handleInputChange('budget', e.target.value)}
+                      onChange={(e) => handleInputChange('budget', (e.target as any).value)}
                       className="pl-10 bg-white/5 border-white/20 text-white"
                       placeholder="0.05"
                       required
