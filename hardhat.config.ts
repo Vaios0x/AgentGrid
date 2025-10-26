@@ -4,6 +4,7 @@ import "@nomicfoundation/hardhat-verify";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import { HEDERA_ACCOUNTS, HEDERA_NETWORKS, HEDERA_CONFIG } from "./config/hedera";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -95,6 +96,27 @@ const config: HardhatUserConfig = {
       url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
       chainId: 84532,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : ["0xcdf3a5b835fbba21d85927c43246285f2cefdcf4d665c3cdc7335f1da05d2450"],
+    },
+    // Hedera Networks
+    hedera_testnet: {
+      url: HEDERA_NETWORKS.testnet.url,
+      chainId: HEDERA_NETWORKS.testnet.chainId,
+      accounts: [
+        HEDERA_ACCOUNTS.ecdsa.privateKey,
+        HEDERA_ACCOUNTS.ed25519.privateKey
+      ],
+      gasPrice: HEDERA_CONFIG.gasPrice,
+      gas: HEDERA_CONFIG.gasLimit,
+    },
+    hedera_mainnet: {
+      url: HEDERA_NETWORKS.mainnet.url,
+      chainId: HEDERA_NETWORKS.mainnet.chainId,
+      accounts: [
+        HEDERA_ACCOUNTS.ecdsa.privateKey,
+        HEDERA_ACCOUNTS.ed25519.privateKey
+      ],
+      gasPrice: HEDERA_CONFIG.gasPrice,
+      gas: HEDERA_CONFIG.gasLimit,
     },
   },
   paths: {

@@ -1,38 +1,22 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./AgentRegistry.sol";
 import "./PaymentManager.sol";
-import "./AgentRegistryProxy.sol";
-import "./PaymentManagerProxy.sol";
 
-/**
- * @title AgentGridFactory
- * @dev Factory contract for deploying AgentGrid ecosystem contracts
- * @author AgentGrid Team
- * @notice This contract manages the deployment and configuration of all AgentGrid contracts
- */
-contract AgentGridFactory is AccessControl, ReentrancyGuard, Pausable {
-    // ============ ROLES ============
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant DEPLOYER_ROLE = keccak256("DEPLOYER_ROLE");
-    
-    // ============ STATE VARIABLES ============
+contract AgentGridFactory is Ownable, ReentrancyGuard, Pausable {
     address public agentRegistryImplementation;
     address public paymentManagerImplementation;
-    address public agentRegistryProxy;
-    address public paymentManagerProxy;
+    address public feeRecipient;
+    uint256 public deploymentFee = 0.01 ether;
     
     mapping(address => bool) public deployedContracts;
     mapping(address => address) public contractOwners;
+    mapping(address => uint256) public deploymentTimestamps;
     
-    uint256 public deploymentFee;
-    address public feeRecipient;
-    
-    // ============ EVENTS ============
     event ContractDeployed(
         address indexed contractAddress,
         string contractType,
@@ -42,8 +26,8 @@ contract AgentGridFactory is AccessControl, ReentrancyGuard, Pausable {
     
     event ImplementationUpdated(
         string contractType,
-        address oldImplementation,
-        address newImplementation,
+        address indexed oldImplementation,
+        address indexed newImplementation,
         uint256 timestamp
     );
     
@@ -53,27 +37,21 @@ contract AgentGridFactory is AccessControl, ReentrancyGuard, Pausable {
         uint256 timestamp
     );
     
-    // ============ MODIFIERS ============
     modifier onlyDeployer() {
-        require(hasRole(DEPLOYER_ROLE, msg.sender), "AgentGridFactory: Not deployer");
+        require(msg.sender == owner(), "AgentGridFactory: Not authorized");
         _;
     }
     
-    // ============ CONSTRUCTOR ============
     constructor(
-        address admin,
-        uint256 _deploymentFee,
+        address _agentRegistryImplementation,
+        address _paymentManagerImplementation,
         address _feeRecipient
     ) {
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ADMIN_ROLE, admin);
-        _grantRole(DEPLOYER_ROLE, admin);
-        
-        deploymentFee = _deploymentFee;
+        agentRegistryImplementation = _agentRegistryImplementation;
+        paymentManagerImplementation = _paymentManagerImplementation;
         feeRecipient = _feeRecipient;
     }
     
-    // ============ DEPLOYMENT FUNCTIONS ============
     function deployAgentRegistry(
         address admin,
         uint256 emergencyWithdrawDelay
@@ -81,37 +59,30 @@ contract AgentGridFactory is AccessControl, ReentrancyGuard, Pausable {
         require(msg.value >= deploymentFee, "AgentGridFactory: Insufficient deployment fee");
         require(agentRegistryImplementation != address(0), "AgentGridFactory: Implementation not set");
         
-        // Deploy proxy
-        bytes memory initData = abi.encodeWithSelector(
-            AgentRegistry.initialize.selector,
-            admin,
-            emergencyWithdrawDelay
-        );
+        // Deploy new AgentRegistry
+        AgentRegistry agentRegistry = new AgentRegistry(emergencyWithdrawDelay);
+        address agentRegistryAddress = address(agentRegistry);
         
-        AgentRegistryProxy proxy = new AgentRegistryProxy(agentRegistryImplementation, initData);
-        agentRegistryProxy = address(proxy);
+        // Transfer ownership to admin
+        agentRegistry.transferOwnership(admin);
         
-        deployedContracts[agentRegistryProxy] = true;
-        contractOwners[agentRegistryProxy] = admin;
+        deployedContracts[agentRegistryAddress] = true;
+        contractOwners[agentRegistryAddress] = admin;
+        deploymentTimestamps[agentRegistryAddress] = block.timestamp;
         
-        // Transfer deployment fee
-        if (deploymentFee > 0) {
-            payable(feeRecipient).transfer(deploymentFee);
+        // Transfer deployment fee to fee recipient
+        if (feeRecipient != address(0)) {
+            payable(feeRecipient).transfer(msg.value);
         }
         
-        // Refund excess
-        if (msg.value > deploymentFee) {
-            payable(msg.sender).transfer(msg.value - deploymentFee);
-        }
+        emit ContractDeployed(agentRegistryAddress, "AgentRegistry", admin, block.timestamp);
         
-        emit ContractDeployed(agentRegistryProxy, "AgentRegistry", admin, block.timestamp);
-        
-        return agentRegistryProxy;
+        return agentRegistryAddress;
     }
     
     function deployPaymentManager(
         address admin,
-        address feeRecipient,
+        address _feeRecipient,
         address treasuryAddress,
         address stakingRewardAddress,
         uint256 emergencyWithdrawDelay
@@ -119,35 +90,31 @@ contract AgentGridFactory is AccessControl, ReentrancyGuard, Pausable {
         require(msg.value >= deploymentFee, "AgentGridFactory: Insufficient deployment fee");
         require(paymentManagerImplementation != address(0), "AgentGridFactory: Implementation not set");
         
-        // Deploy proxy
-        bytes memory initData = abi.encodeWithSelector(
-            PaymentManager.initialize.selector,
-            admin,
-            feeRecipient,
+        // Deploy new PaymentManager
+        PaymentManager paymentManager = new PaymentManager(
+            address(0), // PYUSD token address - should be set after deployment
+            _feeRecipient,
             treasuryAddress,
             stakingRewardAddress,
             emergencyWithdrawDelay
         );
+        address paymentManagerAddress = address(paymentManager);
         
-        PaymentManagerProxy proxy = new PaymentManagerProxy(paymentManagerImplementation, initData);
-        paymentManagerProxy = address(proxy);
+        // Transfer ownership to admin
+        paymentManager.transferOwnership(admin);
         
-        deployedContracts[paymentManagerProxy] = true;
-        contractOwners[paymentManagerProxy] = admin;
+        deployedContracts[paymentManagerAddress] = true;
+        contractOwners[paymentManagerAddress] = admin;
+        deploymentTimestamps[paymentManagerAddress] = block.timestamp;
         
-        // Transfer deployment fee
-        if (deploymentFee > 0) {
-            payable(feeRecipient).transfer(deploymentFee);
+        // Transfer deployment fee to fee recipient
+        if (feeRecipient != address(0)) {
+            payable(feeRecipient).transfer(msg.value);
         }
         
-        // Refund excess
-        if (msg.value > deploymentFee) {
-            payable(msg.sender).transfer(msg.value - deploymentFee);
-        }
+        emit ContractDeployed(paymentManagerAddress, "PaymentManager", admin, block.timestamp);
         
-        emit ContractDeployed(paymentManagerProxy, "PaymentManager", admin, block.timestamp);
-        
-        return paymentManagerProxy;
+        return paymentManagerAddress;
     }
     
     function deployFullEcosystem(
@@ -159,8 +126,8 @@ contract AgentGridFactory is AccessControl, ReentrancyGuard, Pausable {
     ) external payable onlyDeployer whenNotPaused nonReentrant returns (address, address) {
         require(msg.value >= deploymentFee * 2, "AgentGridFactory: Insufficient deployment fee");
         
-        address agentRegistry = deployAgentRegistry(admin, emergencyWithdrawDelay);
-        address paymentManager = deployPaymentManager(
+        address agentRegistry = this.deployAgentRegistry(admin, emergencyWithdrawDelay);
+        address paymentManager = this.deployPaymentManager(
             admin,
             _feeRecipient,
             treasuryAddress,
@@ -171,8 +138,8 @@ contract AgentGridFactory is AccessControl, ReentrancyGuard, Pausable {
         return (agentRegistry, paymentManager);
     }
     
-    // ============ ADMIN FUNCTIONS ============
-    function setAgentRegistryImplementation(address implementation) external onlyRole(ADMIN_ROLE) {
+    // Admin functions
+    function setAgentRegistryImplementation(address implementation) external onlyOwner {
         require(implementation != address(0), "AgentGridFactory: Invalid implementation");
         
         address oldImplementation = agentRegistryImplementation;
@@ -181,7 +148,7 @@ contract AgentGridFactory is AccessControl, ReentrancyGuard, Pausable {
         emit ImplementationUpdated("AgentRegistry", oldImplementation, implementation, block.timestamp);
     }
     
-    function setPaymentManagerImplementation(address implementation) external onlyRole(ADMIN_ROLE) {
+    function setPaymentManagerImplementation(address implementation) external onlyOwner {
         require(implementation != address(0), "AgentGridFactory: Invalid implementation");
         
         address oldImplementation = paymentManagerImplementation;
@@ -190,27 +157,36 @@ contract AgentGridFactory is AccessControl, ReentrancyGuard, Pausable {
         emit ImplementationUpdated("PaymentManager", oldImplementation, implementation, block.timestamp);
     }
     
-    function setDeploymentFee(uint256 newFee) external onlyRole(ADMIN_ROLE) {
+    function setFeeRecipient(address newFeeRecipient) external onlyOwner {
+        require(newFeeRecipient != address(0), "AgentGridFactory: Invalid fee recipient");
+        feeRecipient = newFeeRecipient;
+    }
+    
+    function setDeploymentFee(uint256 newFee) external onlyOwner {
+        require(newFee > 0, "AgentGridFactory: Invalid fee");
+        
         uint256 oldFee = deploymentFee;
         deploymentFee = newFee;
         
         emit DeploymentFeeUpdated(oldFee, newFee, block.timestamp);
     }
     
-    function setFeeRecipient(address newRecipient) external onlyRole(ADMIN_ROLE) {
-        require(newRecipient != address(0), "AgentGridFactory: Invalid recipient");
-        feeRecipient = newRecipient;
-    }
-    
-    function pause() external onlyRole(ADMIN_ROLE) {
+    function pause() external onlyOwner {
         _pause();
     }
     
-    function unpause() external onlyRole(ADMIN_ROLE) {
+    function unpause() external onlyOwner {
         _unpause();
     }
     
-    // ============ VIEW FUNCTIONS ============
+    function emergencyWithdraw() external onlyOwner {
+        uint256 amount = address(this).balance;
+        require(amount > 0, "AgentGridFactory: No funds to withdraw");
+        
+        payable(owner()).transfer(amount);
+    }
+    
+    // View functions
     function isContractDeployed(address contractAddress) external view returns (bool) {
         return deployedContracts[contractAddress];
     }
@@ -219,23 +195,10 @@ contract AgentGridFactory is AccessControl, ReentrancyGuard, Pausable {
         return contractOwners[contractAddress];
     }
     
-    function getDeploymentInfo() external view returns (
-        address,
-        address,
-        address,
-        address,
-        uint256
-    ) {
-        return (
-            agentRegistryImplementation,
-            paymentManagerImplementation,
-            agentRegistryProxy,
-            paymentManagerProxy,
-            deploymentFee
-        );
+    function getDeploymentTimestamp(address contractAddress) external view returns (uint256) {
+        return deploymentTimestamps[contractAddress];
     }
     
-    // ============ RECEIVE FUNCTION ============
     receive() external payable {
         // Allow contract to receive ETH for deployment fees
     }

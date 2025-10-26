@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { 
@@ -14,8 +15,8 @@ import {
   Globe,
   Heart
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { FooterParticles } from '@/components/footer-particles'
+import { Button } from './ui/button'
+import { FooterParticles } from './footer-particles'
 
 export function Footer() {
   const scrollToTop = () => {
