@@ -21,7 +21,7 @@ import { FooterParticles } from './footer-particles'
 export function Footer() {
   const scrollToTop = () => {
     if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      (window as any).scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
