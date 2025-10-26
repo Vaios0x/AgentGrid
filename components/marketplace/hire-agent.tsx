@@ -159,7 +159,7 @@ export function HireAgent({ agentId }: HireAgentProps) {
                   <Textarea
                     id="taskDescription"
                     value={formData.taskDescription}
-                    onChange={(e) => handleInputChange('taskDescription', (e.target as any).value)}
+                    onChange={(e) => handleInputChange('taskDescription', e.target.value)}
                     placeholder="Describe what you want the agent to do..."
                     className="mt-2 bg-white/5 border-white/20 text-white placeholder-gray-400"
                     rows={4}
@@ -179,7 +179,7 @@ export function HireAgent({ agentId }: HireAgentProps) {
                       step="0.01"
                       min="0.01"
                       value={formData.budget}
-                      onChange={(e) => handleInputChange('budget', (e.target as any).value)}
+                      onChange={(e) => handleInputChange('budget', e.target.value)}
                       className="pl-10 bg-white/5 border-white/20 text-white"
                       placeholder="0.05"
                       required
@@ -203,7 +203,7 @@ export function HireAgent({ agentId }: HireAgentProps) {
                   <select
                     id="priority"
                     value={formData.priority}
-                    onChange={(e) => handleInputChange('priority', (e.target as any).value)}
+                    onChange={(e) => handleInputChange('priority', e.target.value)}
                     className="mt-2 w-full px-3 py-2 rounded-lg bg-white/5 border border-white/20 text-white"
                   >
                     <option value="low">Low - Standard processing</option>
@@ -220,7 +220,7 @@ export function HireAgent({ agentId }: HireAgentProps) {
                     id="deadline"
                     type="datetime-local"
                     value={formData.deadline}
-                    onChange={(e) => handleInputChange('deadline', e.target.value)}
+                    onChange={(e) => handleInputChange('deadline', (e.target as any).value)}
                     className="mt-2 bg-white/5 border-white/20 text-white"
                   />
                 </div>
