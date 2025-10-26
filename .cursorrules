@@ -1,0 +1,100 @@
+# AgentGrid Cursor Rules
+
+## Rule: Safe Editing Policy
+
+- DO NOT remove or break any existing code
+- DO NOT modify current logic unless necessary
+- Only extend or add new code with minimal, safe changes
+
+## Rule: Code Style and Language Preferences
+
+- Always write code in **TypeScript** with strict mode enabled
+- Always provide **proper type annotations** for all functions and variables
+- Do not use `any` unless explicitly allowed - use unknown instead
+- Use interface over type when defining object shapes
+- Use const assertions for literal types
+- Prefer functional components with hooks over class components
+
+## Rule: Framework Standards
+
+- Use Next.js 15.3+ with App Router (React 19 canary)
+- Use Server Components by default, Client Components only when needed
+- Implement proper loading.tsx and error.tsx boundaries
+- Use TypeScript 5.3+ features including satisfies operator
+- Utilize React Server Actions for mutations
+
+## Rule: Styling Architecture
+
+- Use **Tailwind CSS v3.4+** for all styling
+- Follow consistent utility-first class conventions
+- Implement glassmorphism effects using backdrop-blur and bg-opacity
+- Use CSS variables for theming (--primary, --secondary, etc)
+- Never use inline styles unless for dynamic values
+- Implement neural effect animations using Framer Motion
+
+## Rule: Component Architecture
+
+- Create components in /components folder with index.tsx pattern
+- Use compound component pattern for complex UI
+- Implement proper loading states with Suspense boundaries
+- Export types from component files
+- Use forwardRef for components that need ref access
+
+## Rule: State Management
+
+- Use Zustand for global state management
+- Implement proper TypeScript types for stores
+- Use immer for immutable updates
+- Persist critical state to localStorage with encryption
+
+## Rule: Web3 Integration
+
+- Use Reown AppKit for wallet connections
+- Implement proper error handling for all blockchain operations
+- Use BigNumber for all token calculations
+- Never store private keys in code or environment variables
+- Implement proper gas estimation before transactions
+
+## Rule: AI Agent Integration
+
+- Separate agent logic into /agents directory
+- Use dependency injection for agent services
+- Implement proper TypeScript interfaces for all agent communications
+- Use event-driven architecture for agent coordination
+
+## Rule: API Design
+
+- Use Next.js Route Handlers for API endpoints
+- Implement proper request validation with Zod
+- Return consistent error responses with status codes
+- Use streaming responses for real-time agent updates
+
+## Rule: Testing
+
+- Write unit tests for utility functions
+- Implement integration tests for API routes
+- Use React Testing Library for component tests
+- Mock blockchain and AI services in tests
+
+## Rule: Performance
+
+- Implement proper memoization with useMemo and useCallback
+- Use dynamic imports for heavy components
+- Optimize images with next/image
+- Implement virtual scrolling for large lists
+
+## Rule: Security
+
+- Validate all user inputs on both client and server
+- Implement rate limiting on API routes
+- Use Content Security Policy headers
+- Sanitize markdown and HTML content
+- Implement proper CORS configuration
+
+## Rule: Code Quality
+
+- Always respect and follow **ESLint** and **Prettier** rules
+- Do not introduce new linting errors
+- Use conventional commits for git messages
+- Document complex logic with JSDoc comments
+- Keep functions under 50 lines
