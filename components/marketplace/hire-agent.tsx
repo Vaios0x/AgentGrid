@@ -203,7 +203,7 @@ export function HireAgent({ agentId }: HireAgentProps) {
                   <select
                     id="priority"
                     value={formData.priority}
-                    onChange={(e) => handleInputChange('priority', e.target.value)}
+                    onChange={(e) => handleInputChange('priority', (e.target as any).value)}
                     className="mt-2 w-full px-3 py-2 rounded-lg bg-white/5 border border-white/20 text-white"
                   >
                     <option value="low">Low - Standard processing</option>
