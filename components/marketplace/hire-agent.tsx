@@ -159,7 +159,7 @@ export function HireAgent({ agentId }: HireAgentProps) {
                   <Textarea
                     id="taskDescription"
                     value={formData.taskDescription}
-                    onChange={(e) => handleInputChange('taskDescription', e.target.value)}
+                    onChange={(e) => handleInputChange('taskDescription', (e.target as any).value)}
                     placeholder="Describe what you want the agent to do..."
                     className="mt-2 bg-white/5 border-white/20 text-white placeholder-gray-400"
                     rows={4}
