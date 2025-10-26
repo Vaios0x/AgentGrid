@@ -198,7 +198,7 @@ export function AgentFilters({ onFiltersChange }: AgentFiltersProps) {
                 <input
                   type="checkbox"
                   checked={filters.onlineOnly}
-                  onChange={(e) => handleOnlineOnlyChange(e.target.checked)}
+                  onChange={(e) => handleOnlineOnlyChange((e.target as HTMLInputElement).checked)}
                   className="w-4 h-4 rounded border-white/20 bg-transparent text-primary-500 focus:ring-primary-500/50"
                 />
                 <span className="text-sm text-white">Online agents only</span>
