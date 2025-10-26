@@ -21,17 +21,30 @@ async function main() {
   const EMERGENCY_WITHDRAW_DELAY = 7 * 24 * 60 * 60; // 7 days
 
   try {
+    // Deploy MockERC20 for testing
+    console.log("\n🪙 Deploying MockERC20...");
+    const MockERC20 = await ethers.getContractFactory("MockERC20");
+    const mockToken = await MockERC20.deploy("PyUSD", "PYUSD");
+    await mockToken.waitForDeployment();
+    console.log("✅ MockERC20 deployed to:", await mockToken.getAddress());
+
     // Deploy AgentRegistry Implementation
     console.log("\n📋 Deploying AgentRegistry Implementation...");
     const AgentRegistry = await ethers.getContractFactory("AgentRegistry");
-    const agentRegistryImpl = await AgentRegistry.deploy();
+    const agentRegistryImpl = await AgentRegistry.deploy(EMERGENCY_WITHDRAW_DELAY);
     await agentRegistryImpl.waitForDeployment();
     console.log("✅ AgentRegistry Implementation deployed to:", await agentRegistryImpl.getAddress());
 
     // Deploy PaymentManager Implementation
     console.log("\n💰 Deploying PaymentManager Implementation...");
     const PaymentManager = await ethers.getContractFactory("PaymentManager");
-    const paymentManagerImpl = await PaymentManager.deploy();
+    const paymentManagerImpl = await PaymentManager.deploy(
+      await mockToken.getAddress(),
+      FEE_RECIPIENT,
+      TREASURY_ADDRESS,
+      STAKING_REWARD_ADDRESS,
+      EMERGENCY_WITHDRAW_DELAY
+    );
     await paymentManagerImpl.waitForDeployment();
     console.log("✅ PaymentManager Implementation deployed to:", await paymentManagerImpl.getAddress());
 
@@ -39,8 +52,8 @@ async function main() {
     console.log("\n🏭 Deploying AgentGridFactory...");
     const AgentGridFactory = await ethers.getContractFactory("AgentGridFactory");
     const factory = await AgentGridFactory.deploy(
-      ADMIN_ADDRESS,
-      ethers.parseEther("0.1"), // 0.1 ETH deployment fee
+      await agentRegistryImpl.getAddress(),
+      await paymentManagerImpl.getAddress(),
       FEE_RECIPIENT
     );
     await factory.waitForDeployment();
@@ -95,8 +108,18 @@ async function main() {
       console.log("\n🔍 Verifying contracts...");
       try {
         await hre.run("verify:verify", {
+          address: await mockToken.getAddress(),
+          constructorArguments: ["PyUSD", "PYUSD"],
+        });
+        console.log("✅ MockERC20 verified");
+      } catch (error) {
+        console.log("⚠️ MockERC20 verification failed:", error);
+      }
+
+      try {
+        await hre.run("verify:verify", {
           address: await agentRegistryImpl.getAddress(),
-          constructorArguments: [],
+          constructorArguments: [EMERGENCY_WITHDRAW_DELAY],
         });
         console.log("✅ AgentRegistry Implementation verified");
       } catch (error) {
@@ -106,7 +129,13 @@ async function main() {
       try {
         await hre.run("verify:verify", {
           address: await paymentManagerImpl.getAddress(),
-          constructorArguments: [],
+          constructorArguments: [
+            await mockToken.getAddress(),
+            FEE_RECIPIENT,
+            TREASURY_ADDRESS,
+            STAKING_REWARD_ADDRESS,
+            EMERGENCY_WITHDRAW_DELAY
+          ],
         });
         console.log("✅ PaymentManager Implementation verified");
       } catch (error) {
@@ -116,7 +145,11 @@ async function main() {
       try {
         await hre.run("verify:verify", {
           address: await factory.getAddress(),
-          constructorArguments: [ADMIN_ADDRESS, ethers.parseEther("0.1"), FEE_RECIPIENT],
+          constructorArguments: [
+            await agentRegistryImpl.getAddress(),
+            await paymentManagerImpl.getAddress(),
+            FEE_RECIPIENT
+          ],
         });
         console.log("✅ AgentGridFactory verified");
       } catch (error) {
@@ -129,6 +162,7 @@ async function main() {
     console.log("====================");
     console.log("Network:", network.name, `(Chain ID: ${network.chainId})`);
     console.log("Deployer:", ADMIN_ADDRESS);
+    console.log("MockERC20 (PyUSD):", await mockToken.getAddress());
     console.log("AgentRegistry Implementation:", await agentRegistryImpl.getAddress());
     console.log("AgentRegistry Proxy:", agentRegistryAddress);
     console.log("PaymentManager Implementation:", await paymentManagerImpl.getAddress());
@@ -143,6 +177,7 @@ async function main() {
       deployer: ADMIN_ADDRESS,
       timestamp: new Date().toISOString(),
       contracts: {
+        mockERC20: await mockToken.getAddress(),
         agentRegistryImplementation: await agentRegistryImpl.getAddress(),
         agentRegistryProxy: agentRegistryAddress,
         paymentManagerImplementation: await paymentManagerImpl.getAddress(),

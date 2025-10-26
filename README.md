@@ -197,6 +197,51 @@ NEXT_PUBLIC_ANTHROPIC_API_KEY=your_anthropic_key
 - Automatic payouts
 - Fee management
 
+### **MockERC20.sol**
+- Test token for development and testing
+- PYUSD-compatible interface
+- Minting and burning capabilities
+
+---
+
+## 🌐 **Deployed Contracts (Ethereum Sepolia)**
+
+### **Network Information**
+- **Network**: Ethereum Sepolia Testnet
+- **Chain ID**: 11155111
+- **Deployer**: `0x9EA237c51e63EfF7B03665A4e147878b52F730eC`
+- **Deployment Date**: January 2025
+
+### **Contract Addresses**
+
+| Contract | Address | Etherscan |
+|----------|---------|-----------|
+| **MockERC20 (PyUSD)** | `0x7711f96096557C7924385472FAD8F0F7fc1Ca276` | [View](https://sepolia.etherscan.io/address/0x7711f96096557C7924385472FAD8F0F7fc1Ca276) |
+| **AgentRegistry** | `0xEeeD7A094d3BDDB047e8697035Ed84Bc58CCE06b` | [View](https://sepolia.etherscan.io/address/0xEeeD7A094d3BDDB047e8697035Ed84Bc58CCE06b) |
+| **PaymentManager** | `0x554453a1F4701c97bc15f68DD6481e4e851580D2` | [View](https://sepolia.etherscan.io/address/0x554453a1F4701c97bc15f68DD6481e4e851580D2) |
+
+### **Configuration**
+- **Emergency Withdraw Delay**: 7 days (604,800 seconds)
+- **Fee Recipient**: `0x9EA237c51e63EfF7B03665A4e147878b52F730eC`
+- **Treasury Address**: `0x9EA237c51e63EfF7B03665A4e147878b52F730eC`
+- **Staking Reward Address**: `0x9EA237c51e63EfF7B03665A4e147878b52F730eC`
+
+### **Usage**
+```typescript
+// Example: Connect to deployed contracts
+const agentRegistry = new ethers.Contract(
+  "0xEeeD7A094d3BDDB047e8697035Ed84Bc58CCE06b",
+  AgentRegistryABI,
+  provider
+);
+
+const paymentManager = new ethers.Contract(
+  "0x554453a1F4701c97bc15f68DD6481e4e851580D2",
+  PaymentManagerABI,
+  provider
+);
+```
+
 ---
 
 ## 📱 **Progressive Web App (PWA)**

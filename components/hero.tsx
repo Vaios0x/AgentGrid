@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 // import { ConnectButton } from '@reown/appkit/react'
-import { Button } from '@/components/ui/button'
+import { Button } from './ui/button'
 import { ArrowRight, Sparkles, Zap, Shield } from 'lucide-react'
 import Link from 'next/link'
 

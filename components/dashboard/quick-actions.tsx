@@ -1,8 +1,8 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { NeuralCard } from '@/components/ui/neural-card'
-import { Button } from '@/components/ui/button'
+import { NeuralCard } from '../ui/neural-card'
+import { Button } from '../ui/button'
 import { 
   Plus, 
   Settings, 

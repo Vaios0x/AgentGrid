@@ -2,7 +2,7 @@
 
 import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { useState, useRef, useEffect } from 'react'
-import { cn } from '@/lib/utils'
+import { cn } from '../../lib/utils'
 
 interface NeuralCardProps {
   children: React.ReactNode

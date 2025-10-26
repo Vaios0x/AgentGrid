@@ -1,8 +1,8 @@
-import { DashboardHeader } from '@/components/dashboard/dashboard-header'
-import { DashboardStats } from '@/components/dashboard/dashboard-stats'
-import { MyAgents } from '@/components/dashboard/my-agents'
-import { RecentActivity } from '@/components/dashboard/recent-activity'
-import { QuickActions } from '@/components/dashboard/quick-actions'
+import { DashboardHeader } from '../../components/dashboard/dashboard-header'
+import { DashboardStats } from '../../components/dashboard/dashboard-stats'
+import { MyAgents } from '../../components/dashboard/my-agents'
+import { RecentActivity } from '../../components/dashboard/recent-activity'
+import { QuickActions } from '../../components/dashboard/quick-actions'
 
 export default function DashboardPage() {
   return (

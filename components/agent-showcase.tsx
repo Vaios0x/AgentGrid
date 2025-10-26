@@ -9,8 +9,8 @@ import {
   ArrowRight,
   Sparkles
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { NeuralCard } from '@/components/ui/neural-card'
+import { Button } from './ui/button'
+import { NeuralCard } from './ui/neural-card'
 import Link from 'next/link'
 
 const agents = [

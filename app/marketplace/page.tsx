@@ -1,7 +1,7 @@
-import { AgentGrid } from '@/components/marketplace/agent-grid'
-import { AgentFilters } from '@/components/marketplace/agent-filters'
-import { SearchBar } from '@/components/marketplace/search-bar'
-import { AgentStats } from '@/components/marketplace/agent-stats'
+import { AgentGrid } from '../../components/marketplace/agent-grid'
+import { AgentFilters } from '../../components/marketplace/agent-filters'
+import { SearchBar } from '../../components/marketplace/search-bar'
+import { AgentStats } from '../../components/marketplace/agent-stats'
 
 export default function MarketplacePage() {
   return (

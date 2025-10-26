@@ -1,7 +1,7 @@
-import { AgentDetail } from '@/components/marketplace/agent-detail'
-import { AgentReviews } from '@/components/marketplace/agent-reviews'
-import { AgentPricing } from '@/components/marketplace/agent-pricing'
-import { HireAgent } from '@/components/marketplace/hire-agent'
+import { AgentDetail } from '../../../components/marketplace/agent-detail'
+import { AgentReviews } from '../../../components/marketplace/agent-reviews'
+import { AgentPricing } from '../../../components/marketplace/agent-pricing'
+import { HireAgent } from '../../../components/marketplace/hire-agent'
 
 interface AgentDetailPageProps {
   params: {

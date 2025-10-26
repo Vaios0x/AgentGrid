@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { NeuralCard } from '@/components/ui/neural-card'
+import { NeuralCard } from '../ui/neural-card'
 import { 
   CheckCircle, 
   XCircle, 
