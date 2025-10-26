@@ -1,11 +1,7 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
-import "@nomicfoundation/hardhat-verify";
-import "@openzeppelin/hardhat-upgrades";
-import "hardhat-gas-reporter";
-import "solidity-coverage";
+require("@nomicfoundation/hardhat-toolbox");
 
-const config: HardhatUserConfig = {
+/** @type import('hardhat/config').HardhatUserConfig */
+module.exports = {
   solidity: {
     version: "0.8.25",
     settings: {
@@ -27,29 +23,17 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       chainId: 31337,
-      forking: {
-        url: process.env.ETH_RPC_URL || "https://eth.llamarpc.com",
-        blockNumber: 19500000, // Pin to specific block for consistent testing
-      },
     },
     localhost: {
       url: "http://127.0.0.1:8545",
       chainId: 31337,
     },
-    // Testnets
     sepolia: {
       url: process.env.SEPOLIA_RPC_URL || "https://sepolia.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
       chainId: 11155111,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : ["0xcdf3a5b835fbba21d85927c43246285f2cefdcf4d665c3cdc7335f1da05d2450"],
       gasPrice: 20000000000, // 20 gwei
     },
-    goerli: {
-      url: process.env.GOERLI_RPC_URL || "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
-      chainId: 5,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : ["0xcdf3a5b835fbba21d85927c43246285f2cefdcf4d665c3cdc7335f1da05d2450"],
-      gasPrice: 20000000000,
-    },
-    // Mainnets
     ethereum: {
       url: process.env.ETH_RPC_URL || "https://eth.llamarpc.com",
       chainId: 1,
@@ -80,22 +64,31 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : ["0xcdf3a5b835fbba21d85927c43246285f2cefdcf4d665c3cdc7335f1da05d2450"],
       gasPrice: 30000000000, // 30 gwei
     },
-    // L2 Testnets
-    arbitrum_sepolia: {
-      url: process.env.ARBITRUM_SEPOLIA_RPC_URL || "https://sepolia-rollup.arbitrum.io/rpc",
-      chainId: 421614,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : ["0xcdf3a5b835fbba21d85927c43246285f2cefdcf4d665c3cdc7335f1da05d2450"],
+  },
+  etherscan: {
+    apiKey: {
+      mainnet: process.env.ETHERSCAN_API_KEY || "",
+      arbitrumOne: process.env.ARBISCAN_API_KEY || "",
+      optimisticEthereum: process.env.OPTIMISM_API_KEY || "",
+      base: process.env.BASESCAN_API_KEY || "",
+      polygon: process.env.POLYGONSCAN_API_KEY || "",
     },
-    optimism_sepolia: {
-      url: process.env.OPTIMISM_SEPOLIA_RPC_URL || "https://sepolia.optimism.io",
-      chainId: 11155420,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : ["0xcdf3a5b835fbba21d85927c43246285f2cefdcf4d665c3cdc7335f1da05d2450"],
-    },
-    base_sepolia: {
-      url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
-      chainId: 84532,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : ["0xcdf3a5b835fbba21d85927c43246285f2cefdcf4d665c3cdc7335f1da05d2450"],
-    },
+  },
+  gasReporter: {
+    enabled: process.env.REPORT_GAS !== undefined,
+    currency: "USD",
+    gasPrice: 20, // gwei
+    ...(process.env.COINMARKETCAP_API_KEY && { coinmarketcap: process.env.COINMARKETCAP_API_KEY }),
+    token: "ETH",
+    gasPriceApi: "https://api.etherscan.io/api?module=proxy&action=eth_gasPrice",
+    showTimeSpent: true,
+    showMethodSig: true,
+    maxMethodDiff: 10,
+    outputFile: "gas-report.txt",
+    noColors: true,
+  },
+  mocha: {
+    timeout: 40000,
   },
   paths: {
     sources: "./contracts",
@@ -103,6 +96,14 @@ const config: HardhatUserConfig = {
     cache: "./cache",
     artifacts: "./artifacts",
   },
+  typechain: {
+    outDir: "typechain-types",
+    target: "ethers-v6",
+    alwaysGenerateOverloads: false,
+    externalArtifacts: ["externalArtifacts/*.json"],
+    dontOverrideCompile: false,
+  },
+  sourcify: {
+    enabled: true,
+  },
 };
-
-export default config;

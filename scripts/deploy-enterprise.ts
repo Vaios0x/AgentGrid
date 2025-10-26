@@ -1,95 +1,81 @@
-import { ethers } from "hardhat";
-import hre from "hardhat";
+import { ethers, upgrades } from "hardhat";
+import { Contract } from "ethers";
 
 async function main() {
-  console.log("🚀 Deploying AgentGrid Enterprise Contracts...");
-
+  console.log("🚀 Starting AgentGrid Enterprise Deployment...");
+  
   const [deployer] = await ethers.getSigners();
-  
-  if (!deployer) {
-    throw new Error("No deployer account found");
-  }
-  
   console.log("Deploying contracts with account:", deployer.address);
-  console.log("Account balance:", (await deployer.provider.getBalance(deployer.address)).toString());
+  console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  // Configuration
+  // Deployment configuration
   const ADMIN_ADDRESS = deployer.address;
   const FEE_RECIPIENT = deployer.address;
   const TREASURY_ADDRESS = deployer.address;
   const STAKING_REWARD_ADDRESS = deployer.address;
   const EMERGENCY_WITHDRAW_DELAY = 7 * 24 * 60 * 60; // 7 days
+  const DEPLOYMENT_FEE = ethers.parseEther("0.1"); // 0.1 ETH
 
   try {
-    // Deploy AgentRegistry Implementation
+    // 1. Deploy AgentRegistry Implementation
     console.log("\n📋 Deploying AgentRegistry Implementation...");
     const AgentRegistry = await ethers.getContractFactory("AgentRegistry");
     const agentRegistryImpl = await AgentRegistry.deploy();
     await agentRegistryImpl.waitForDeployment();
     console.log("✅ AgentRegistry Implementation deployed to:", await agentRegistryImpl.getAddress());
 
-    // Deploy PaymentManager Implementation
+    // 2. Deploy PaymentManager Implementation
     console.log("\n💰 Deploying PaymentManager Implementation...");
     const PaymentManager = await ethers.getContractFactory("PaymentManager");
     const paymentManagerImpl = await PaymentManager.deploy();
     await paymentManagerImpl.waitForDeployment();
     console.log("✅ PaymentManager Implementation deployed to:", await paymentManagerImpl.getAddress());
 
-    // Deploy AgentGridFactory
+    // 3. Deploy AgentGridFactory
     console.log("\n🏭 Deploying AgentGridFactory...");
     const AgentGridFactory = await ethers.getContractFactory("AgentGridFactory");
     const factory = await AgentGridFactory.deploy(
       ADMIN_ADDRESS,
-      ethers.parseEther("0.1"), // 0.1 ETH deployment fee
+      DEPLOYMENT_FEE,
       FEE_RECIPIENT
     );
     await factory.waitForDeployment();
     console.log("✅ AgentGridFactory deployed to:", await factory.getAddress());
 
-    // Set implementations
+    // 4. Set implementations in factory
     console.log("\n⚙️ Configuring Factory...");
-    if (factory.setAgentRegistryImplementation) {
-      await factory.setAgentRegistryImplementation(await agentRegistryImpl.getAddress());
-    }
-    if (factory.setPaymentManagerImplementation) {
-      await factory.setPaymentManagerImplementation(await paymentManagerImpl.getAddress());
-    }
+    await factory.setAgentRegistryImplementation(await agentRegistryImpl.getAddress());
+    await factory.setPaymentManagerImplementation(await paymentManagerImpl.getAddress());
     console.log("✅ Factory configured with implementations");
 
-    // Deploy AgentRegistry Proxy
+    // 5. Deploy AgentRegistry Proxy
     console.log("\n🔗 Deploying AgentRegistry Proxy...");
-    if (!factory.deployAgentRegistry) {
-      throw new Error("deployAgentRegistry method not found on factory contract");
-    }
     const agentRegistryTx = await factory.deployAgentRegistry(
       ADMIN_ADDRESS,
       EMERGENCY_WITHDRAW_DELAY,
-      { value: ethers.parseEther("0.1") }
+      { value: DEPLOYMENT_FEE }
     );
     const agentRegistryReceipt = await agentRegistryTx.wait();
     const agentRegistryAddress = agentRegistryReceipt?.logs[0].args?.contractAddress || 
-      (factory.agentRegistryProxy ? await factory.agentRegistryProxy() : "Unknown");
+      await factory.agentRegistryProxy();
     console.log("✅ AgentRegistry Proxy deployed to:", agentRegistryAddress);
 
-    // Deploy PaymentManager Proxy
+    // 6. Deploy PaymentManager Proxy
     console.log("\n💳 Deploying PaymentManager Proxy...");
-    if (!factory.deployPaymentManager) {
-      throw new Error("deployPaymentManager method not found on factory contract");
-    }
     const paymentManagerTx = await factory.deployPaymentManager(
       ADMIN_ADDRESS,
       FEE_RECIPIENT,
       TREASURY_ADDRESS,
       STAKING_REWARD_ADDRESS,
       EMERGENCY_WITHDRAW_DELAY,
-      { value: ethers.parseEther("0.1") }
+      { value: DEPLOYMENT_FEE }
     );
     const paymentManagerReceipt = await paymentManagerTx.wait();
     const paymentManagerAddress = paymentManagerReceipt?.logs[0].args?.contractAddress || 
-      (factory.paymentManagerProxy ? await factory.paymentManagerProxy() : "Unknown");
+      await factory.paymentManagerProxy();
     console.log("✅ PaymentManager Proxy deployed to:", paymentManagerAddress);
 
-    // Verify contracts (if on a supported network)
+    // 7. Verify contracts (if on a supported network)
     const network = await ethers.provider.getNetwork();
     if (network.chainId !== 31337n) { // Not localhost
       console.log("\n🔍 Verifying contracts...");
@@ -116,7 +102,7 @@ async function main() {
       try {
         await hre.run("verify:verify", {
           address: await factory.getAddress(),
-          constructorArguments: [ADMIN_ADDRESS, ethers.parseEther("0.1"), FEE_RECIPIENT],
+          constructorArguments: [ADMIN_ADDRESS, DEPLOYMENT_FEE, FEE_RECIPIENT],
         });
         console.log("✅ AgentGridFactory verified");
       } catch (error) {
@@ -124,7 +110,7 @@ async function main() {
       }
     }
 
-    // Display deployment summary
+    // 8. Display deployment summary
     console.log("\n🎉 Deployment Summary:");
     console.log("====================");
     console.log("Network:", network.name, `(Chain ID: ${network.chainId})`);
@@ -135,8 +121,9 @@ async function main() {
     console.log("PaymentManager Proxy:", paymentManagerAddress);
     console.log("AgentGridFactory:", await factory.getAddress());
     console.log("Emergency Withdraw Delay:", EMERGENCY_WITHDRAW_DELAY, "seconds");
+    console.log("Deployment Fee:", ethers.formatEther(DEPLOYMENT_FEE), "ETH");
 
-    // Save deployment info
+    // 9. Save deployment info
     const deploymentInfo = {
       network: network.name,
       chainId: network.chainId.toString(),
@@ -151,7 +138,7 @@ async function main() {
       },
       configuration: {
         emergencyWithdrawDelay: EMERGENCY_WITHDRAW_DELAY,
-        deploymentFee: "0.1 ETH",
+        deploymentFee: ethers.formatEther(DEPLOYMENT_FEE),
         feeRecipient: FEE_RECIPIENT,
         treasuryAddress: TREASURY_ADDRESS,
         stakingRewardAddress: STAKING_REWARD_ADDRESS
