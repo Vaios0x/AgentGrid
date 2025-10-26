@@ -19,14 +19,14 @@ export function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (typeof window !== 'undefined') {
-        setIsScrolled(window.scrollY > 20)
+      if (typeof (globalThis as any).window !== 'undefined') {
+        setIsScrolled((globalThis as any).window.scrollY > 20)
       }
     }
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', handleScroll)
-      return () => window.removeEventListener('scroll', handleScroll)
+    if (typeof (globalThis as any).window !== 'undefined') {
+      (globalThis as any).window.addEventListener('scroll', handleScroll)
+      return () => (globalThis as any).window.removeEventListener('scroll', handleScroll)
     }
   }, [])
 
