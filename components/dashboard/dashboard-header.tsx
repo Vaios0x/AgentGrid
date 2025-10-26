@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ConnectButton } from '@reown/appkit/react'
+import { AppKitConnectButton } from '@reown/appkit/react'
 import { Button } from '../ui/button'
 import { Bell, Settings, Plus, User } from 'lucide-react'
 import Link from 'next/link'
@@ -51,7 +51,7 @@ export function DashboardHeader() {
         </Button>
 
         <div className="glassmorphism rounded-lg p-1">
-          <ConnectButton />
+          <AppKitConnectButton />
         </div>
       </div>
     </motion.div>

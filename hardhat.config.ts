@@ -1,5 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-gas-reporter";
@@ -28,10 +29,10 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       chainId: 31337,
-      forking: {
-        url: process.env.ETH_RPC_URL || "https://eth.llamarpc.com",
-        blockNumber: 19500000, // Pin to specific block for consistent testing
-      },
+      // forking: {
+      //   url: process.env.ETH_RPC_URL || "https://eth.llamarpc.com",
+      //   blockNumber: 19500000, // Pin to specific block for consistent testing
+      // },
     },
     localhost: {
       url: "http://127.0.0.1:8545",
@@ -39,9 +40,9 @@ const config: HardhatUserConfig = {
     },
     // Testnets
     sepolia: {
-      url: process.env.SEPOLIA_RPC_URL || "https://ethereum-sepolia.publicnode.com",
+      url: "https://eth-sepolia.g.alchemy.com/v2/R-rmhTU0BMCn2NdDHZUhj",
       chainId: 11155111,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : ["0xcdf3a5b835fbba21d85927c43246285f2cefdcf4d665c3cdc7335f1da05d2450"],
+      accounts: ["9ddfdc054d4b07b7afc45b1f5e95878a04eacbc2a23b1c95d3d9a0f3ad493ebc"],
       gasPrice: 20000000000, // 20 gwei
     },
     goerli: {

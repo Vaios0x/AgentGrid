@@ -105,6 +105,9 @@ importers:
         specifier: ^4.5.0
         version: 4.5.7(@types/react@18.3.26)(immer@10.2.0)(react@19.2.0)
     devDependencies:
+      '@nomicfoundation/hardhat-ethers':
+        specifier: ^3.1.0
+        version: 3.1.0(ethers@6.15.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(hardhat@2.26.3(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.18.12)(typescript@5.9.3))(typescript@5.9.3)(utf-8-validate@5.0.10))
       '@nomicfoundation/hardhat-toolbox':
         specifier: ^5.0.0
         version: 5.0.0(b5cad51e5ae68f6e4d66f5f82ca4b04a)

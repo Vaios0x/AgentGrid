@@ -1,5 +1,7 @@
-import { ethers, network, run } from "hardhat";
+import { network, run } from "hardhat";
 import { Contract } from "ethers";
+// @ts-ignore - ethers is available at runtime through hardhat plugin
+import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
 
@@ -9,6 +11,7 @@ interface DeploymentInfo {
   deployer: string;
   timestamp: string;
   contracts: {
+    mockERC20: string;
     agentRegistryImplementation: string;
     agentRegistryProxy: string;
     paymentManagerImplementation: string;
@@ -55,14 +58,34 @@ async function main() {
   const EMERGENCY_WITHDRAW_DELAY = 7 * 24 * 60 * 60; // 7 days
   const DEPLOYMENT_FEE = ethers.parseEther("0.1");
 
-  const gasUsed: any = {};
+  const gasUsed: {
+    agentRegistryImpl: number;
+    paymentManagerImpl: number;
+    factory: number;
+    agentRegistryProxy: number;
+    paymentManagerProxy: number;
+  } = {
+    agentRegistryImpl: 0,
+    paymentManagerImpl: 0,
+    factory: 0,
+    agentRegistryProxy: 0,
+    paymentManagerProxy: 0
+  };
 
   try {
+    // 0. Deploy MockERC20 for PaymentManager
+    console.log("🪙 Step 0: Deploying MockERC20...");
+    const MockERC20 = await ethers.getContractFactory("MockERC20");
+    const mockTokenTx = await MockERC20.deploy("PyUSD", "PYUSD");
+    await mockTokenTx.waitForDeployment();
+    const mockTokenAddress = await mockTokenTx.getAddress();
+    console.log("✅ MockERC20 deployed to:", mockTokenAddress);
+
     // 1. Deploy AgentRegistry Implementation
-    console.log("📋 Step 1: Deploying AgentRegistry Implementation...");
+    console.log("\n📋 Step 1: Deploying AgentRegistry Implementation...");
     const AgentRegistry = await ethers.getContractFactory("AgentRegistry");
     
-    const agentRegistryImplTx = await AgentRegistry.deploy();
+    const agentRegistryImplTx = await AgentRegistry.deploy(EMERGENCY_WITHDRAW_DELAY);
     await agentRegistryImplTx.waitForDeployment();
     const agentRegistryImplAddress = await agentRegistryImplTx.getAddress();
     
@@ -74,7 +97,13 @@ async function main() {
     console.log("\n💰 Step 2: Deploying PaymentManager Implementation...");
     const PaymentManager = await ethers.getContractFactory("PaymentManager");
     
-    const paymentManagerImplTx = await PaymentManager.deploy();
+    const paymentManagerImplTx = await PaymentManager.deploy(
+      mockTokenAddress,
+      FEE_RECIPIENT,
+      TREASURY_ADDRESS,
+      STAKING_REWARD_ADDRESS,
+      EMERGENCY_WITHDRAW_DELAY
+    );
     await paymentManagerImplTx.waitForDeployment();
     const paymentManagerImplAddress = await paymentManagerImplTx.getAddress();
     
@@ -87,8 +116,8 @@ async function main() {
     const AgentGridFactory = await ethers.getContractFactory("AgentGridFactory");
     
     const factoryTx = await AgentGridFactory.deploy(
-      ADMIN_ADDRESS,
-      DEPLOYMENT_FEE,
+      agentRegistryImplAddress,
+      paymentManagerImplAddress,
       FEE_RECIPIENT
     );
     await factoryTx.waitForDeployment();
@@ -98,38 +127,20 @@ async function main() {
     console.log("✅ AgentGridFactory deployed to:", factoryAddress);
     console.log("⛽ Gas used:", gasUsed.factory.toString());
 
-    // 4. Initialize implementations
-    console.log("\n⚙️ Step 4: Initializing implementations...");
+    // 4. Initialize implementations (if needed)
+    console.log("\n⚙️ Step 4: Checking implementations...");
     
-    // Initialize AgentRegistry
-    const agentRegistryImpl = await ethers.getContractAt("AgentRegistry", agentRegistryImplAddress);
-    const initAgentTx = await agentRegistryImpl.initialize(ADMIN_ADDRESS, EMERGENCY_WITHDRAW_DELAY);
-    await initAgentTx.wait();
-    console.log("✅ AgentRegistry initialized");
-
-    // Initialize PaymentManager
-    const paymentManagerImpl = await ethers.getContractAt("PaymentManager", paymentManagerImplAddress);
-    const initPaymentTx = await paymentManagerImpl.initialize(
-      ADMIN_ADDRESS,
-      FEE_RECIPIENT,
-      TREASURY_ADDRESS,
-      STAKING_REWARD_ADDRESS,
-      EMERGENCY_WITHDRAW_DELAY
-    );
-    await initPaymentTx.wait();
-    console.log("✅ PaymentManager initialized");
+    // AgentRegistry and PaymentManager are already initialized via constructor
+    console.log("✅ AgentRegistry already initialized via constructor");
+    console.log("✅ PaymentManager already initialized via constructor");
 
     // 5. Configure Factory
-    console.log("\n🔧 Step 5: Configuring Factory...");
+    console.log("\n🔧 Step 5: Checking Factory configuration...");
     const factory = await ethers.getContractAt("AgentGridFactory", factoryAddress);
     
-    const setAgentImplTx = await factory.setAgentRegistryImplementation(agentRegistryImplAddress);
-    await setAgentImplTx.wait();
-    console.log("✅ AgentRegistry implementation set in factory");
-
-    const setPaymentImplTx = await factory.setPaymentManagerImplementation(paymentManagerImplAddress);
-    await setPaymentImplTx.wait();
-    console.log("✅ PaymentManager implementation set in factory");
+    // Factory already has implementations set via constructor
+    console.log("✅ AgentRegistry implementation already set in factory");
+    console.log("✅ PaymentManager implementation already set in factory");
 
     // 6. Deploy AgentRegistry Proxy
     console.log("\n🔗 Step 6: Deploying AgentRegistry Proxy...");
@@ -169,10 +180,21 @@ async function main() {
       console.log("\n🔍 Step 8: Verifying contracts...");
       
       try {
+        console.log("Verifying MockERC20...");
+        await run("verify:verify", {
+          address: mockTokenAddress,
+          constructorArguments: ["PyUSD", "PYUSD"],
+        });
+        console.log("✅ MockERC20 verified");
+      } catch (error) {
+        console.log("⚠️ MockERC20 verification failed:", error);
+      }
+
+      try {
         console.log("Verifying AgentRegistry Implementation...");
         await run("verify:verify", {
           address: agentRegistryImplAddress,
-          constructorArguments: [],
+          constructorArguments: [EMERGENCY_WITHDRAW_DELAY],
         });
         console.log("✅ AgentRegistry Implementation verified");
       } catch (error) {
@@ -183,7 +205,13 @@ async function main() {
         console.log("Verifying PaymentManager Implementation...");
         await run("verify:verify", {
           address: paymentManagerImplAddress,
-          constructorArguments: [],
+          constructorArguments: [
+            mockTokenAddress,
+            FEE_RECIPIENT,
+            TREASURY_ADDRESS,
+            STAKING_REWARD_ADDRESS,
+            EMERGENCY_WITHDRAW_DELAY
+          ],
         });
         console.log("✅ PaymentManager Implementation verified");
       } catch (error) {
@@ -194,7 +222,7 @@ async function main() {
         console.log("Verifying AgentGridFactory...");
         await run("verify:verify", {
           address: factoryAddress,
-          constructorArguments: [ADMIN_ADDRESS, DEPLOYMENT_FEE, FEE_RECIPIENT],
+          constructorArguments: [agentRegistryImplAddress, paymentManagerImplAddress, FEE_RECIPIENT],
         });
         console.log("✅ AgentGridFactory verified");
       } catch (error) {
@@ -225,6 +253,7 @@ async function main() {
     console.log("⏰ Timestamp:", new Date().toISOString());
     console.log("");
     console.log("📋 CONTRACTS:");
+    console.log("MockERC20 (PyUSD):", mockTokenAddress);
     console.log("AgentRegistry Implementation:", agentRegistryImplAddress);
     console.log("AgentRegistry Proxy:", agentRegistryProxyAddress);
     console.log("PaymentManager Implementation:", paymentManagerImplAddress);
@@ -239,12 +268,14 @@ async function main() {
     console.log("Staking Reward Address:", STAKING_REWARD_ADDRESS);
     console.log("");
     console.log("⛽ GAS USAGE:");
+    console.log("MockERC20:", "N/A (included in total)");
     console.log("AgentRegistry Implementation:", gasUsed.agentRegistryImpl.toString());
     console.log("PaymentManager Implementation:", gasUsed.paymentManagerImpl.toString());
     console.log("AgentGridFactory:", gasUsed.factory.toString());
     console.log("AgentRegistry Proxy:", gasUsed.agentRegistryProxy.toString());
     console.log("PaymentManager Proxy:", gasUsed.paymentManagerProxy.toString());
-    console.log("Total Gas Used:", Object.values(gasUsed).reduce((a, b) => a + b, 0).toString());
+    const totalGas = Object.values(gasUsed).reduce((a: number, b: number) => a + b, 0);
+    console.log("Total Gas Used:", totalGas.toString());
 
     // 11. Save deployment info
     const deploymentInfo: DeploymentInfo = {
@@ -253,6 +284,7 @@ async function main() {
       deployer: ADMIN_ADDRESS,
       timestamp: new Date().toISOString(),
       contracts: {
+        mockERC20: mockTokenAddress,
         agentRegistryImplementation: agentRegistryImplAddress,
         agentRegistryProxy: agentRegistryProxyAddress,
         paymentManagerImplementation: paymentManagerImplAddress,

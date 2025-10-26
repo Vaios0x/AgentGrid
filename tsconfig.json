@@ -48,10 +48,5 @@
     "components",
     "lib",
     "hooks"
-  ],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
-    }
   ]
 }
